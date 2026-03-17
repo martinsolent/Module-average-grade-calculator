@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module Grade Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --border-hi: #484f58;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --accent-dim:#1f6feb;
+      --green:     #3fb950;
+      --yellow:    #d29922;
+      --red:       #f85149;
+      --purple:    #bc8cff;
+      --radius:    8px;
+      --transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    body.light {
+      --bg:        #f6f8fa;
+      --surface:   #ffffff;
+      --border:    #d0d7de;
+      --border-hi: #afb8c1;
+      --text:      #1f2328;
+      --muted:     #656d76;
+      --accent:    #0969da;
+      --accent-dim:#0550ae;
+      --green:     #1a7f37;
+      --yellow:    #9a6700;
+      --red:       #cf222e;
+      --purple:    #8250df;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+      transition: var(--transition);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .header-text { flex: 1; }
+
+    header h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.4rem;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .card-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .card-body {
+      padding: 1.25rem;
+    }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .mode-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.3rem 0.75rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .mode-btn.active {
+      background: var(--accent-dim);
+      color: #ffffff;
+    }
+
+    /* ── Module name ── */
+    .module-name-row {
+      margin-bottom: 1.25rem;
+    }
+
+    .field-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.02em;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      width: 100%;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input.error { border-color: var(--red); }
+
+    /* ── Assessment rows ── */
+    .assessments-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .assessment-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 120px;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .assessment-index {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    /* ── Weight indicator ── */
+    .weight-sum {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 0.82rem;
+    }
+
+    .weight-sum .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .weight-sum span.label { color: var(--muted); }
+    .weight-sum span.val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    /* ── Calculate button ── */
+    .calc-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.65rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      background: var(--accent-dim);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      width: 100%;
+      margin-top: 1.25rem;
+    }
+
+    .calc-btn:hover { background: var(--accent); }
+    .calc-btn:active { transform: scale(0.99); }
+
+    /* ── Result card ── */
+    #result-card {
+      display: none;
+      animation: fadeUp 0.25s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .result-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+
+    .result-stat .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .result-stat .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .result-stat .stat-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ── Grade badge ── */
+    .grade-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      margin-top: 0.4rem;
+    }
+
+    /* ── Breakdown table ── */
+    .breakdown {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 1fr 80px 80px 100px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.82rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .breakdown-row:last-child { border-bottom: none; }
+
+    .breakdown-row.header {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--bg);
+    }
+
+    .breakdown-row .cell:not(:first-child) {
+      font-family: 'JetBrains Mono', monospace;
+      text-align: right;
+    }
+
+    /* ── Error message ── */
+    .error-msg {
+      font-size: 0.8rem;
+      color: var(--red);
+      margin-top: 0.4rem;
+      display: none;
+    }
+
+    /* ── Colour helpers ── */
+    .c-green  { color: var(--green); }
+    .c-yellow { color: var(--yellow); }
+    .c-red    { color: var(--red); }
+    .c-blue   { color: var(--accent); }
+    .c-purple { color: var(--purple); }
+
+    .bg-green  { background: rgba(63,185,80,.15);  color: var(--green); }
+    .bg-yellow { background: rgba(210,153,34,.15); color: var(--yellow); }
+    .bg-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+    .bg-blue   { background: rgba(88,166,255,.15); color: var(--accent); }
+    .bg-purple { background: rgba(188,140,255,.15);color: var(--purple); }
+
+    /* ── Theme toggle ── */
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: var(--transition), box-shadow 0.15s;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--border-hi);
+      color: var(--text);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+    }
+
+    .theme-toggle .icon {
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .header-text {
+      text-align: left;
+    }
+
+    @media (max-width: 520px) {
+      .assessment-row { grid-template-columns: 1fr 96px 96px; gap: 0.5rem; }
+      .result-grid { grid-template-columns: 1fr; }
+      .breakdown-row { grid-template-columns: 1fr 70px 70px 90px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-text">
+    <h1>Module Grade Calculator</h1>
+    <p>Enter assessment names, weightings, and grades to calculate the overall module mark.</p>
+  </div>
+  <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle light/dark mode">
+    <span class="icon" id="themeIcon">☀️</span>
+    <span id="themeLabel">Light mode</span>
+  </button>
+</header>
+
+<div class="container">
+
+  <!-- Config card -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Configuration</span>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-n="2" onclick="setMode(2)">2 Assessments</button>
+        <button class="mode-btn"        data-n="3" onclick="setMode(3)">3 Assessments</button>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <div class="module-name-row">
+        <label class="field-label" for="moduleName">Module name</label>
+        <input type="text" id="moduleName" placeholder="e.g. Introduction to Programming" />
+      </div>
+
+      <div class="assessments-grid" id="assessmentsGrid"></div>
+
+      <div class="weight-sum" id="weightSum">
+        <span class="dot" id="weightDot" style="background:var(--muted)"></span>
+        <span class="label">Total weighting</span>
+        <span class="val" id="weightVal">0%</span>
+      </div>
+      <p class="error-msg" id="weightError">Weightings must add up to 100%.</p>
+      <p class="error-msg" id="gradeError">All grades must be between 0 and 100.</p>
+
+      <button class="calc-btn" onclick="calculate()">Calculate Module Grade</button>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card" id="result-card">
+    <div class="card-header">
+      <span class="card-title" id="resultModuleName">Results</span>
+    </div>
+    <div class="card-body">
+      <div class="result-grid">
+        <div class="result-stat">
+          <div class="stat-label">Weighted average</div>
+          <div class="stat-value" id="resScore">—</div>
+          <div class="stat-sub">out of 100</div>
+        </div>
+        <div class="result-stat">
+          <div class="stat-label">Module grade</div>
+          <div class="stat-value" id="resGradeLetter" style="font-size:2.5rem">—</div>
+          <div>
+            <span class="grade-badge" id="resBadge">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="breakdown-row header">
+          <span class="cell">Assessment</span>
+          <span class="cell">Weight</span>
+          <span class="cell">Grade</span>
+          <span class="cell">Contribution</span>
+        </div>
+        <div id="breakdownRows"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let numAssessments = 2;
+  let isLight = false;
+
+  function toggleTheme() {
+    isLight = !isLight;
+    document.body.classList.toggle('light', isLight);
+    document.getElementById('themeIcon').textContent  = isLight ? '🌙' : '☀️';
+    document.getElementById('themeLabel').textContent = isLight ? 'Dark mode' : 'Light mode';
+  }
+
+  const GRADES = [
+    { min: 70, letter: 'A',  label: 'First Class',          cls: 'c-green',  badge: 'bg-green'  },
+    { min: 60, letter: 'B',  label: 'Upper Second (2:1)',    cls: 'c-blue',   badge: 'bg-blue'   },
+    { min: 50, letter: 'C',  label: 'Lower Second (2:2)',    cls: 'c-purple', badge: 'bg-purple' },
+    { min: 40, letter: 'D',  label: 'Third Class',           cls: 'c-yellow', badge: 'bg-yellow' },
+    { min: 0,  letter: 'F',  label: 'Fail',                  cls: 'c-red',    badge: 'bg-red'    },
+  ];
+
+  function getGrade(score) {
+    return GRADES.find(g => score >= g.min);
+  }
+
+  function setMode(n) {
+    numAssessments = n;
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.n) === n);
+    });
+    buildGrid();
+    hideResult();
+    clearErrors();
+  }
+
+  function buildGrid() {
+    const grid = document.getElementById('assessmentsGrid');
+    grid.innerHTML = '';
+
+    const defaults = [
+      { name: 'Coursework',    w: numAssessments === 2 ? 40 : 30 },
+      { name: 'Practical',     w: numAssessments === 2 ? 60 : 40 },
+      { name: 'Final Exam',    w: 30 },
+    ];
+
+    for (let i = 0; i < numAssessments; i++) {
+      const d = defaults[i];
+      const row = document.createElement('div');
+      row.className = 'assessment-row';
+      row.innerHTML = `
+        <div>
+          <span class="assessment-index">Assessment ${i + 1}</span>
+          <input type="text" id="name${i}" placeholder="${d.name}" value="${d.name}" />
+        </div>
+        <div>
+          <label class="field-label" for="weight${i}">Weight (%)</label>
+          <input type="number" id="weight${i}" min="0" max="100" placeholder="0" value="${d.w}" oninput="updateWeightSum()" />
+        </div>
+        <div>
+          <label class="field-label" for="grade${i}">Grade (%)</label>
+          <input type="number" id="grade${i}" min="0" max="100" placeholder="0" />
+        </div>`;
+      grid.appendChild(row);
+    }
+    updateWeightSum();
+  }
+
+  function updateWeightSum() {
+    let total = 0;
+    for (let i = 0; i < numAssessments; i++) {
+      const v = parseFloat(document.getElementById(`weight${i}`).value) || 0;
+      total += v;
+    }
+    const dot   = document.getElementById('weightDot');
+    const val   = document.getElementById('weightVal');
+    val.textContent = total + '%';
+    if (total === 100) {
+      dot.style.background = 'var(--green)';
+      val.style.color = 'var(--green)';
+    } else if (total > 100) {
+      dot.style.background = 'var(--red)';
+      val.style.color = 'var(--red)';
+    } else {
+      dot.style.background = 'var(--yellow)';
+      val.style.color = 'var(--yellow)';
+    }
+  }
+
+  function clearErrors() {
+    document.getElementById('weightError').style.display = 'none';
+    document.getElementById('gradeError').style.display  = 'none';
+    for (let i = 0; i < numAssessments; i++) {
+      document.getElementById(`weight${i}`).classList.remove('error');
+      document.getElementById(`grade${i}`).classList.remove('error');
+    }
+  }
+
+  function hideResult() {
+    document.getElementById('result-card').style.display = 'none';
+  }
+
+  function calculate() {
+    clearErrors();
+
+    let totalWeight = 0;
+    let gradeValid  = true;
+    const assessments = [];
+
+    for (let i = 0; i < numAssessments; i++) {
+      const name   = document.getElementById(`name${i}`).value.trim() || `Assessment ${i + 1}`;
+      const weight = parseFloat(document.getElementById(`weight${i}`).value);
+      const grade  = parseFloat(document.getElementById(`grade${i}`).value);
+
+      if (isNaN(grade) || grade < 0 || grade > 100) {
+        document.getElementById(`grade${i}`).classList.add('error');
+        gradeValid = false;
+      }
+      totalWeight += (isNaN(weight) ? 0 : weight);
+      assessments.push({ name, weight: isNaN(weight) ? 0 : weight, grade: isNaN(grade) ? null : grade });
+    }
+
+    if (Math.abs(totalWeight - 100) > 0.001) {
+      document.getElementById('weightError').style.display = 'block';
+      for (let i = 0; i < numAssessments; i++) {
+        document.getElementById(`weight${i}`).classList.add('error');
+      }
+      return;
+    }
+
+    if (!gradeValid) {
+      document.getElementById('gradeError').style.display = 'block';
+      return;
+    }
+
+    // Calculate
+    let weighted = 0;
+    assessments.forEach(a => { weighted += (a.grade * a.weight) / 100; });
+    const score = Math.round(weighted * 10) / 10;
+    const gradeInfo = getGrade(score);
+    const modName = document.getElementById('moduleName').value.trim() || 'Module Results';
+
+    // Render result
+    document.getElementById('resultModuleName').textContent = modName;
+    document.getElementById('resScore').textContent = score.toFixed(1);
+    document.getElementById('resScore').className   = `stat-value ${gradeInfo.cls}`;
+    document.getElementById('resGradeLetter').textContent = gradeInfo.letter;
+    document.getElementById('resGradeLetter').className   = `stat-value ${gradeInfo.cls}`;
+
+    const badge = document.getElementById('resBadge');
+    badge.textContent  = gradeInfo.label;
+    badge.className    = `grade-badge ${gradeInfo.badge}`;
+
+    // Breakdown rows
+    const rows = document.getElementById('breakdownRows');
+    rows.innerHTML = '';
+    assessments.forEach(a => {
+      const contrib = (a.grade * a.weight / 100).toFixed(1);
+      const row = document.createElement('div');
+      row.className = 'breakdown-row';
+      row.innerHTML = `
+        <span class="cell">${a.name}</span>
+        <span class="cell">${a.weight}%</span>
+        <span class="cell">${a.grade}%</span>
+        <span class="cell">${contrib} pts</span>`;
+      rows.appendChild(row);
+    });
+
+    // Totals row
+    const totRow = document.createElement('div');
+    totRow.className = 'breakdown-row';
+    totRow.style.borderTop = '1px solid var(--border-hi)';
+    totRow.style.fontWeight = '600';
+    totRow.innerHTML = `
+      <span class="cell">Total</span>
+      <span class="cell">100%</span>
+      <span class="cell">—</span>
+      <span class="cell ${gradeInfo.cls}">${score.toFixed(1)}%</span>`;
+    rows.appendChild(totRow);
+
+    const rc = document.getElementById('result-card');
+    rc.style.display = 'block';
+    rc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Initialise
+  buildGrid();
+</script>
+</body>
+</html>
